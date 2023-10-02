@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.5.3 <0.7.0;
+pragma solidity >=0.5.3 <0.9.0;
 pragma experimental ABIEncoderV2;
 
 import "vrf-solidity/contracts/VRF.sol";
@@ -46,7 +46,7 @@ contract Thea {
         Payload payload; // Payload that is transmitted from Polkadex
     }
 
-    event Deposit(bytes ecdsa_pubkey, uint128 asset_id, uint128 amount);
+    event DepositEvent(bytes ecdsa_pubkey, uint128 asset_id, uint128 amount);
     event MessageProcessed(uint64 message_id);
     event WithdrawalProcessed(uint256 message_id, uint256 withdrawal_index, address user, uint128 asset_id, uint128 amount);
 
