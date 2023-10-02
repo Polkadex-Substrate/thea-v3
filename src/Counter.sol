@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity >=0.5.3 <0.9.0;
+pragma solidity >=0.4.22 <0.9.0;
 pragma experimental ABIEncoderV2;
 
 import "vrf-solidity/contracts/VRF.sol";
 import "./MMR.sol";
+import "./Ds.sol";
 
-contract Thea {
+contract Thea is Ds {
     mapping(uint256 => address[]) public validators; // Validator public keys as address grouped by epoch
     mapping(uint256 => bytes) public messages; // Approved messages indexed by message_id
     uint256[2] public vrf_public_key; // VRF Public key
@@ -17,34 +18,7 @@ contract Thea {
     MMR.Tree public deposits_trie;
 
     // Individual deposit
-    struct Deposit {
-        uint[] user; // beneficiary
-        uint128 asset_id; // Asset id
-        uint128 amount; // Amount in 10^12 UNITS
-    }
 
-    // Individual withdrawal
-    struct Withdrawal{
-        address user; // recipient address
-        uint128 asset_id; // Asset id
-        uint128 amount; // Amount
-    }
-    // Payload that is transmitted by Thea
-    struct Payload {
-        uint[] data; // arbitrary data
-        uint64 last_processed_deposit_nonce; // Last processed deposit
-        bytes32 deposit_root; // Merkle mountain range root of deposits
-        Withdrawal[] withdrawals; // Withdrawals to process
-    }
-
-    // Message created during each
-    struct Message {
-        uint64 epoch_id; // Epoch number of validators
-        uint64 message_id; // message_id number
-        bytes vrf_proof; // VRF Proof, used to generate randomness for sampling
-        bytes[] signatures; // Signatures from the random sample
-        Payload payload; // Payload that is transmitted from Polkadex
-    }
 
     event DepositEvent(bytes ecdsa_pubkey, uint128 asset_id, uint128 amount);
     event MessageProcessed(uint64 message_id);
@@ -75,7 +49,12 @@ contract Thea {
         // 3. Emit the event WithdrawalProcessed event
     }
 
-    function submitMessage(Message memory message) public {
+    //Function which takes Message as input and returns the hash of the message
+    function hashMessage(Message memory message) public pure returns (bytes memory) {
+        return abi.encodePacked(sha256(abi.encode(message)));
+    }
+
+    function submitMessage(Message memory message) external {
         // Hash the message
         bytes memory data = abi.encode(message.payload);
         bytes32 payload_hash = sha256(data);
@@ -84,11 +63,12 @@ contract Thea {
         uint256[4] memory proof = VRF.decodeProof(message.vrf_proof);
         (uint256[2] memory _uPoint, uint256[4] memory _vComponents) = VRF.computeFastVerifyParams(vrf_public_key,proof, abi.encodePacked(payload_hash));
 
-        // Verify VRF proof
-        require(VRF.fastVerify(vrf_public_key,proof,abi.encodePacked(payload_hash),_uPoint,_vComponents));
 
+        // Verify VRF proof
+        require(VRF.fastVerify(vrf_public_key,proof,abi.encodePacked(payload_hash),_uPoint,_vComponents), "VRF proof is not valid");
         // Compute randomness by hashing the proof
         bytes32 random_seed = VRF.gammaToHash(proof[0],proof[1]);
+        //bytes32 random_seed = sha256(message.vrf_proof);
 
         // Sample the public keys from stored validator public keys
         address[] memory _validators = validators[message.epoch_id];
