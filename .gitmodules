@@ -6,3 +6,7 @@
 	path = lib/vrf-solidity
 	url = https://github.com/witnet/vrf-solidity
 	branch = 0.2.1
+[submodule "lib/elliptic-curve-solidity"]
+	path = lib/elliptic-curve-solidity
+	url = https://github.com/witnet/elliptic-curve-solidity
+	branch = 0.2.1
