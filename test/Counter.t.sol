@@ -9,13 +9,11 @@ import "../src/Ds.sol";
 contract CounterTest is Test, Ds {
     Thea thea;
     function setUp() public {
-        // Convert hexadecimal string to bytes
         uint256[2] memory vrf_public_key = [uint256(0x032c8c31fc9f990c6b55e3865a184a4ce50e09481f2eaeb3e60ec1cea13a6ae6), uint256(0x45)];
         thea = new Thea(vrf_public_key);
     }
 
     function testSendMessage() public {
-        // Create Message payload
         uint[] memory data = new uint[](1);
         data[0] = 1;
         uint64 last_processed_deposit_nonce = 0;
@@ -30,8 +28,6 @@ contract CounterTest is Test, Ds {
         bytes[] memory signatures = new bytes[](1);
         signatures[0] = new bytes(1);
         Message memory message = Message(epoch_id, message_id, vrf_proof, signatures, payload);
-        // Send Message
-        // Send Message to hashMessage Function and print the hash
         bytes memory hash = thea.hashMessage(message);
         console.logBytes(hash);
         thea.submitMessage(message);
