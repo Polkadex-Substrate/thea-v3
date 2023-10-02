@@ -49,7 +49,6 @@ contract Thea is Ds {
         // 3. Emit the event WithdrawalProcessed event
     }
 
-    //Function which takes Message as input and returns the hash of the message
     function hashMessage(Message memory message) public pure returns (bytes memory) {
         return abi.encodePacked(sha256(abi.encode(message)));
     }
