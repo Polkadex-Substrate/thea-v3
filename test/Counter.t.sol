@@ -10,9 +10,6 @@ contract CounterTest is Test, Ds {
     Thea thea;
     function setUp() public {
         // Convert hexadecimal string to bytes
-        //bytes me;
-        //me = abi.encodePacked("0x","032c8c31fc9f990c6b55e3865a184a4ce50e09481f2eaeb3e60ec1cea13a6ae645");
-        //bytes memory me2 = hex"032c8c31fc9f990c6b55e3865a184a4ce50e09481f2eaeb3e60ec1cea13a6ae645";
         uint256[2] memory vrf_public_key = [uint256(0x032c8c31fc9f990c6b55e3865a184a4ce50e09481f2eaeb3e60ec1cea13a6ae6), uint256(0x45)];
         thea = new Thea(vrf_public_key);
     }
