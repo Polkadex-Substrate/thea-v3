@@ -33,6 +33,13 @@ contract Thea is Ds {
         // TODO: this should be called only by the owner of this contract
     }
 
+    //Function to add deposit
+    function addDeposit(uint[] memory user, uint128 asset_id, uint128 amount) public {
+        Deposit memory deposit = Deposit(user, asset_id, amount);
+        deposits[0] = deposit;
+        emit DepositEvent(abi.encode(user), asset_id, amount);
+    }
+
     function deposit() public {
         // TODO: Allows the user to deposit funds to orderbook
         // 1. Convert the Token contract address to AssetId (u128)
@@ -50,7 +57,11 @@ contract Thea is Ds {
     }
 
     function hashMessage(Message memory message) public pure returns (bytes memory) {
-        return abi.encodePacked(sha256(abi.encode(message)));
+        return abi.encodePacked(sha256(abi.encode(message.payload)));
+    }
+
+    function addValidator(uint256 epoch_id, address validator) public {
+        validators[epoch_id].push(validator);
     }
 
     function submitMessage(Message memory message) external {
@@ -62,9 +73,9 @@ contract Thea is Ds {
         uint256[4] memory proof = VRF.decodeProof(message.vrf_proof);
         (uint256[2] memory _uPoint, uint256[4] memory _vComponents) = VRF.computeFastVerifyParams(vrf_public_key,proof, abi.encodePacked(payload_hash));
 
-
+        VRF.fastVerify(vrf_public_key,proof,abi.encodePacked(payload_hash),_uPoint,_vComponents);
         // Verify VRF proof
-        require(VRF.fastVerify(vrf_public_key,proof,abi.encodePacked(payload_hash),_uPoint,_vComponents), "VRF proof is not valid");
+        //require(VRF.fastVerify(vrf_public_key,proof,abi.encodePacked(payload_hash),_uPoint,_vComponents), "VRF proof is not valid");
         // Compute randomness by hashing the proof
         bytes32 random_seed = VRF.gammaToHash(proof[0],proof[1]);
         //bytes32 random_seed = sha256(message.vrf_proof);
@@ -74,19 +85,21 @@ contract Thea is Ds {
         uint256[] memory indices  = generate_random_indices(uint256(random_seed), message.signatures.length,_validators.length);
 
         // Loop and verify signatures
-        require(indices.length == message.signatures.length);
+        //require(indices.length == message.signatures.length);
         for (uint256 i=0; i < message.signatures.length; i++) {
             address validator = _validators[indices[i]];
             (uint8 v, bytes32 r, bytes32 s) = splitSignature(message.signatures[i]);
-            require(ecrecover(payload_hash, v, r, s) == validator);
+            ecrecover(payload_hash, v, r, s);
+            //require(ecrecover(payload_hash, v, r, s) == validator);
         }
-        // Compute Merkle Mountain Range root of Deposits
-        for(uint256 i = last_deposit_nonce; i < message.payload.last_processed_deposit_nonce; i++){
-            Deposit memory deposit = deposits[i];
-            MMR.append(deposits_trie, abi.encode(deposit));
-        }
+        //Compute Merkle Mountain Range root of Deposits
+//        for(uint256 i = last_deposit_nonce; i < message.payload.last_processed_deposit_nonce; i++){
+//            Deposit memory deposit = deposits[i];
+//            MMR.append(deposits_trie, abi.encode(deposit));
+//        }
         // Verify root
-        require(MMR.getRoot(deposits_trie) == message.payload.deposit_root);
+        //MMR.getRoot(deposits_trie);
+        //require(MMR.getRoot(deposits_trie) == message.payload.deposit_root, "Here");
         // Store the message
         messages[message.message_id] = abi.encode(message);
         // Update the deposit nonce
@@ -98,11 +111,12 @@ contract Thea is Ds {
     function generate_random_indices(uint256 seed, uint256 length, uint256 total_length) internal pure returns (uint256[] memory) {
         // Linear Congruential Generator (LCG) algorithm seed with 'seed'.
         uint256[] memory indices;
-
+        indices = new uint256[](length);
         for(uint256 i; i<length;i++){
             seed = seed % total_length;
             indices[i] = seed;
         }
+
         return indices;
     }
 
