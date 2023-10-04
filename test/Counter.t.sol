@@ -16,7 +16,6 @@ contract CounterTest is Test, Ds {
             validators[i] = address(0x0);
             thea.addValidator(1, validators[i]);
         }
-        //Add 20 deposits
         for (uint i = 0; i < 20; i++) {
             uint[] memory user = new uint[](1);
             user[0] = 1;
@@ -25,8 +24,6 @@ contract CounterTest is Test, Ds {
     }
 
     function testSendMessage() public {
-        // Generate random validators and add it to contract
-
         uint[] memory data = new uint[](1);
         data[0] = 1;
         uint64 last_processed_deposit_nonce = 20;
@@ -41,7 +38,6 @@ contract CounterTest is Test, Ds {
         uint64 message_id = 1;
         bytes memory vrf_proof = hex"02f5238dd597cd4fae46649556e417281537fbacc87d2016e0f2c583f96e8d9f490eb47853118d0645e2ca0c44920dbb4d5aded0a976667ee8eceedb77f6cf604ecf1baa008cd5fa51413ec56323591897";
         bytes[] memory signatures = new bytes[](100);
-        // genrate random siganutres
         for (uint i = 0; i < 100; i++) {
             signatures[i] = hex"21fbf0696d5e0aa2ef41a2b4ffb623bcaf070461d61cf7251c74161f82fec3a4370854bc0a34b3ab487c1bc021cd318c734c51ae29374f2beb0e6f2dd49b4bf41c";
         }

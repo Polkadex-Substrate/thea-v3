@@ -33,7 +33,6 @@ contract Thea is Ds {
         // TODO: this should be called only by the owner of this contract
     }
 
-    //Function to add deposit
     function addDeposit(uint[] memory user, uint128 asset_id, uint128 amount) public {
         Deposit memory deposit = Deposit(user, asset_id, amount);
         deposits[0] = deposit;
