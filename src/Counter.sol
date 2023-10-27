@@ -63,6 +63,8 @@ contract Thea is Ds {
         validators[epoch_id].push(validator);
     }
 
+
+
     function submitMessage(Message memory message) external {
         // Hash the message
         bytes memory data = abi.encode(message.payload);
@@ -72,16 +74,16 @@ contract Thea is Ds {
         uint256[4] memory proof = VRF.decodeProof(message.vrf_proof);
         (uint256[2] memory _uPoint, uint256[4] memory _vComponents) = VRF.computeFastVerifyParams(vrf_public_key,proof, abi.encodePacked(payload_hash));
 
-        VRF.fastVerify(vrf_public_key,proof,abi.encodePacked(payload_hash),_uPoint,_vComponents);
+        //VRF.fastVerify(vrf_public_key,proof,abi.encodePacked(payload_hash),_uPoint,_vComponents);
         // Verify VRF proof
-        //require(VRF.fastVerify(vrf_public_key,proof,abi.encodePacked(payload_hash),_uPoint,_vComponents), "VRF proof is not valid");
+        require(VRF.verify(vrf_public_key,proof,abi.encodePacked(payload_hash)), "VRF proof is not valid");
         // Compute randomness by hashing the proof
-        bytes32 random_seed = VRF.gammaToHash(proof[0],proof[1]);
+        //bytes32 random_seed = VRF.gammaToHash(proof[0],proof[1]);
         //bytes32 random_seed = sha256(message.vrf_proof);
 
         // Sample the public keys from stored validator public keys
         address[] memory _validators = validators[message.epoch_id];
-        uint256[] memory indices  = generate_random_indices(uint256(random_seed), message.signatures.length,_validators.length);
+        uint256[] memory indices  = generate_random_indices(uint256(0), message.signatures.length,_validators.length);
 
         // Loop and verify signatures
         //require(indices.length == message.signatures.length);
@@ -92,12 +94,12 @@ contract Thea is Ds {
             //require(ecrecover(payload_hash, v, r, s) == validator);
         }
         //Compute Merkle Mountain Range root of Deposits
-//        for(uint256 i = last_deposit_nonce; i < message.payload.last_processed_deposit_nonce; i++){
-//            Deposit memory deposit = deposits[i];
-//            MMR.append(deposits_trie, abi.encode(deposit));
-//        }
+        for(uint256 i = last_deposit_nonce; i < message.payload.last_processed_deposit_nonce; i++){
+            Deposit memory deposit = deposits[i];
+            MMR.append(deposits_trie, abi.encode(deposit));
+        }
         // Verify root
-        //MMR.getRoot(deposits_trie);
+        MMR.getRoot(deposits_trie);
         //require(MMR.getRoot(deposits_trie) == message.payload.deposit_root, "Here");
         // Store the message
         messages[message.message_id] = abi.encode(message);
