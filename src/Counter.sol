@@ -78,8 +78,8 @@ contract Thea is Ds {
         // Verify VRF proof
         require(VRF.verify(vrf_public_key,proof,abi.encodePacked(payload_hash)), "VRF proof is not valid");
         // Compute randomness by hashing the proof
-        //bytes32 random_seed = VRF.gammaToHash(proof[0],proof[1]);
-        //bytes32 random_seed = sha256(message.vrf_proof);
+//        bytes32 random_seed = VRF.gammaToHash(proof[0],proof[1]);
+//        bytes32 random_seed = sha256(message.vrf_proof);
 
         // Sample the public keys from stored validator public keys
         address[] memory _validators = validators[message.epoch_id];
@@ -94,17 +94,17 @@ contract Thea is Ds {
             //require(ecrecover(payload_hash, v, r, s) == validator);
         }
         //Compute Merkle Mountain Range root of Deposits
-        for(uint256 i = last_deposit_nonce; i < message.payload.last_processed_deposit_nonce; i++){
-            Deposit memory deposit = deposits[i];
-            MMR.append(deposits_trie, abi.encode(deposit));
-        }
+//        for(uint256 i = last_deposit_nonce; i < message.payload.last_processed_deposit_nonce; i++){
+//            Deposit memory deposit = deposits[i];
+//            MMR.append(deposits_trie, abi.encode(deposit));
+//        }
         // Verify root
         MMR.getRoot(deposits_trie);
         //require(MMR.getRoot(deposits_trie) == message.payload.deposit_root, "Here");
         // Store the message
         messages[message.message_id] = abi.encode(message);
         // Update the deposit nonce
-        last_deposit_nonce = message.payload.last_processed_deposit_nonce;
+        //last_deposit_nonce = message.payload.last_processed_deposit_nonce;
 
         emit MessageProcessed(message.message_id);
     }

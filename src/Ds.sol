@@ -1,4 +1,5 @@
 pragma solidity ^0.8.0;
+import "openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract Ds {
     struct Deposit {
@@ -16,8 +17,6 @@ contract Ds {
     // Payload that is transmitted by Thea
     struct Payload {
         uint[] data; // arbitrary data
-        uint64 last_processed_deposit_nonce; // Last processed deposit
-        bytes32 deposit_root; // Merkle mountain range root of deposits
         Withdrawal[] withdrawals; // Withdrawals to process
     }
 
@@ -29,4 +28,15 @@ contract Ds {
         bytes[] signatures; // Signatures from the random sample
         Payload payload; // Payload that is transmitted from Polkadex
     }
+
+    struct NewPendingWithdrawals {
+        Withdrawal[] withdrawals; // Withdrawals to process
+        bool isBlocked; // Is blocked
+        uint256 blockNumber; // Claimed block number
+    }
+
+
+    // Create Enum called Mode which has Relayer or Validators
+    enum Mode {Relayer, Validators}
+
 }

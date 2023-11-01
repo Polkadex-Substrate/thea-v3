@@ -32,7 +32,7 @@ contract CounterTest is Test, Ds {
         for (uint i = 0; i < 30; i++) {
             withdrawals[i] = Withdrawal(address(0x0), 1, 1);
         }
-        Payload memory payload = Payload(data, last_processed_deposit_nonce, deposit_root, withdrawals);
+        Payload memory payload = Payload(data, withdrawals);
         // Create Message
         uint64 epoch_id = 1;
         uint64 message_id = 1;
