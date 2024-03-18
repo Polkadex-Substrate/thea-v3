@@ -158,7 +158,7 @@ contract TheaV3 is Ds {
         relayerValidation(message, signature);
         PolkadexTypes.TheaMessage memory theaMessage = PolkadexTypes.decodePayload(message);
         if (theaMessage.payloadType == PolkadexTypes.PayloadType.L1Deposit) {
-            processWithdrawals(theaMessage.nonce, theaMessage.withdrawals);
+            //processWithdrawals(theaMessage.nonce, theaMessage.withdrawals);
         } else {
             revert("Invalid payload type");
         }
@@ -169,7 +169,7 @@ contract TheaV3 is Ds {
         //validatorValidation(message, signature, epochId);
         PolkadexTypes.TheaMessage memory theaMessage = PolkadexTypes.decodePayload(message);
         if (theaMessage.payloadType == PolkadexTypes.PayloadType.L1Deposit) {
-            processWithdrawals(theaMessage.nonce, theaMessage.withdrawals);
+            //processWithdrawals(theaMessage.nonce, theaMessage.withdrawals);
         } else {
             revert("Invalid payload type");
         }

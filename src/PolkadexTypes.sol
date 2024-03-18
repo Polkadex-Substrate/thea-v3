@@ -9,9 +9,8 @@ library PolkadexTypes {
         uint64 blockNumber;
         uint64 nonce;
         uint8 networkId;
-        uint64 validatorSetId;
         PayloadType payloadType;
-        Withdrawal[] withdrawals;
+        bytes payload;
     }
 
     struct Withdrawal {
@@ -33,9 +32,19 @@ library PolkadexTypes {
 
     enum PayloadType {ScheduledRotateValidators, ValidatorsRotated, L1Deposit}
 
+    struct ValidatorSet {
+        uint64 id;
+        address[] validators;
+    }
+
     event DebuggerId(uint32 id);
     event DebuggerIdu64(string str,uint64 id);
     event Success(uint id);
+    event DebuggerValidatorCount(uint32 count);
+    event debuggerAddress(address addr);
+    event debugECDSA(bytes ecdsaPubKey);
+    event DDebuggerHash(bytes32 hash);
+    event DebuggerBytes(uint64[] b);
 
     function decodePayloadType(bytes8 payloadType) public pure returns (PayloadType) {
         if (payloadType == hex"00") {
@@ -67,12 +76,19 @@ library PolkadexTypes {
         return number;
     }
 
+    function bytesToUintWithoutReverse(bytes memory b) public pure returns (uint256) {
+        uint256 number;
+        for (uint256 i = 0; i < b.length; i++) {
+            number = number + uint256(uint8(b[i])) * (2 ** (8 * (b.length - (i + 1))));
+        }
+        return number;
+    }
+
     function decodeWithdrawal(bytes calldata data) public returns (Withdrawal memory) {
         Withdrawal memory withdrawal;
         uint8 idPrefix = uint8(bytesToUint(data[0:1]));
         require(idPrefix % 4 == 0, "Invalid prefix");
         uint32 idSize = uint32(idPrefix) >> 2;
-        emit DebuggerId(idSize);
         require(idSize == 10, "ID size is not right");
         withdrawal.id = uint64(bytesToUint(data[1:11]));
         withdrawal.assetId = uint128(bytesToUint(data[11:27]));
@@ -82,26 +98,27 @@ library PolkadexTypes {
         uint32 recipientSize = uint32(recipientPrefix) >> 2;
         emit DebuggerId(recipientSize);
         require(recipientSize == 20, "Recipient size is not right");
-        withdrawal.recipient = address(bytes20(reverse(data[44:64]))); //TODO: Check if this is right
+        withdrawal.recipient = address(bytes20(data[44:64]));
+        emit debuggerAddress(withdrawal.recipient);
         withdrawal.isBlocked = data[64] == hex"01" ? true : false;
-        emit DebuggerId(99);
+        //emit DebuggerId(99);
         return withdrawal;
     }
 
     function decodeRawWithdrawals(bytes calldata data) public returns (Withdrawal[] memory) {
         uint8 idPrefix = uint8(bytesToUint(data[0:1]));
-        emit DebuggerId(20);
+        //emit DebuggerId(20);
         if (idPrefix % 4 == 0) {
-            emit DebuggerId(21);
+            //emit DebuggerId(21);
             return decodeWithdrawals(data[1:]);
         } else if (idPrefix % 4 == 1) {
-            emit DebuggerId(22);
+            //emit DebuggerId(22);
             return decodeWithdrawals(data[2:]);
         } else if (idPrefix % 4 == 2) {
-            emit DebuggerId(23);
+            //emit DebuggerId(23);
             return decodeWithdrawals(data[4:]);
         }else {
-            emit DebuggerId(24);
+            //emit DebuggerId(24);
             revert("Invalid raw prefix");
         }
     }
@@ -122,21 +139,65 @@ library PolkadexTypes {
 
     function decodePayload(bytes calldata data) public returns (TheaMessage memory) {
         TheaMessage memory message;
-        //TODO: Verify the length of payload
         message.blockNumber = uint64(bytesToUint(data[0:8]));
         message.nonce = uint64(bytesToUint(data[8:16]));
         message.networkId = uint8(bytesToUint(data[16:17]));
-        emit DebuggerId(message.networkId);
-        emit DebuggerId(11);
-        message.validatorSetId = uint64(bytesToUint(data[17:25]));
-        message.payloadType = decodePayloadType(bytes8(data[25:26]));
-        if (message.payloadType == PayloadType.L1Deposit) {
-            emit DebuggerId(12);
-            message.withdrawals = decodeRawWithdrawals(data[26:]);
-            emit DebuggerId(13);
-        } else {
-            revert("Invalid Payload Type");
-        }
+        message.payloadType = decodePayloadType(bytes8(data[17:18]));
+        message.payload = data[18:];
         return message;
+    }
+
+    function processRawWithdrawalPayload(bytes calldata data) public returns (Withdrawal[] memory) {
+        return decodeRawWithdrawals(data[0:]);
+    }
+
+    function decodeRawNewValidators(bytes calldata data) public returns (ValidatorSet memory) {
+        uint8 idPrefix = uint8(bytesToUint(data[0:1]));
+        if (idPrefix % 4 == 0) {
+            return processNewValidators(data[1:]);
+        } else if (idPrefix % 4 == 1) {
+            return processNewValidators(data[2:]);
+        } else if (idPrefix % 4 == 2) {
+            return processNewValidators(data[4:]);
+        }else {
+            revert("Invalid raw prefix");
+        }
+    }
+
+    function processNewValidators(bytes calldata data) public returns (ValidatorSet memory) {
+        ValidatorSet memory validatorSet;
+        validatorSet.id = uint64(bytesToUint(data[0:8]));
+        uint8 prefix = uint8(bytesToUint(data[8:9]));
+        uint32 noOfValidators;
+        uint offset;
+        if (prefix % 4 == 0) {
+            noOfValidators = uint32(prefix) >> 2;
+            offset = 10;
+        } else if (prefix % 4 == 1) {
+            offset = 10;
+            noOfValidators = get_length(data[offset:]) / 21;
+            offset = 11;
+            emit DebuggerValidatorCount(noOfValidators);
+        } else if (prefix % 4 == 2) {
+            offset = 12;
+            noOfValidators = get_length(data[offset:]) / 21;
+            offset = 13;
+            emit DebuggerValidatorCount(noOfValidators);
+        } else {
+            revert("Invalid validator prefix");
+        }
+        validatorSet.validators = new address[](noOfValidators);
+        for (uint i = 0; i < noOfValidators; i++) {
+            bytes memory ecdsaPubKey = data[offset:offset+20];
+            require(ecdsaPubKey.length == 20, "Invalid ecdsa pub key");
+            address validator = address(bytes20(ecdsaPubKey));
+            validatorSet.validators[i] = validator;
+            offset = offset + 21;
+        }
+        return validatorSet;
+    }
+
+    function get_length(bytes memory b) public pure returns (uint32) {
+        return uint32(b.length);
     }
 }
