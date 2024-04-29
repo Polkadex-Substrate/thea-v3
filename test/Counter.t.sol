@@ -231,61 +231,13 @@ contract TheaLatestTest is Test, Ds {
         validators[199] = address(bytes20(hex"d634612cb55ec842f8db63db6fe903047e052bd0"));
         uint64[] memory validatorsIndexForVerification = new uint64[](1);
         validatorsIndexForVerification[0] = 0;
-        thea.initialize(address(0), 243, validators, 10, validatorsIndexForVerification, 0, 0);
+        thea.initialize(address(0), 243, validators, 10, validatorsIndexForVerification, 0, 31, 255);
     }
 
-//    function testDecodeWithdrawal() public {
-//        bytes memory data = hex"0c280202020202020202020202000000000000000000000000000000030000000000000000000000000000005004040404040404040404040404040404040404040004052802020202020202020202020000000000000000000000000000000300000000000000000000000000000050040404040404040404040404040404040404040400040528020202020202020202020200000000000000000000000000000003000000000000000000000000000000500404040404040404040404040404040404040404000405";
-//        PolkadexTypes.decodeWithdrawals(data);
-//    }
-//
-//    function testDecodeRawWithdrawal() public {
-//        bytes memory data = hex"0428b36010eb285c154a8cd6af098e0cc9d1d058b55527316ba8788b0a000000000000000000000000000000504b257d164c8f94c042ac3a64855618c863b8dbee0000";
-//        PolkadexTypes.decodeRawWithdrawals(data);
-//    }
-
-//    function testDecodeMessage() public {
-//        bytes memory data = hex"44000000000000000100000000000000020000000000000000020d010428b36010eb285c154a8cd6af098e0cc9d1d058b55527316ba8788b0a000000000000000000000000000000504b257d164c8f94c042ac3a64855618c863b8dbee0000";
-//        PolkadexTypes.decodePayload(data);
-//    }
-//
-//    //44000000000000000100000000000000020000000000000000020d010428b36010eb285c154a8cd6af098e0cc9d1d058b55527316ba8788b0a000000000000000000000000000000504b257d164c8f94c042ac3a64855618c863b8dbee0000
-//
-//    function testSendMessage() public {
-//        bytes memory message = hex"44000000000000000100000000000000020000000000000000020d010428b36010eb285c154a8cd6af098e0cc9d1d058b55527316ba8788b0a000000000000000000000000000000504b257d164c8f94c042ac3a64855618c863b8dbee0000";
-//        bytes memory signature = hex"8591e3639711056d42221705753f52fbe65e7ab8d5bdcc8533fc74f74fc77edf5f49a760835af86adaa4c5143ca3ff20cc84cd8b3f26068f1caad63ecd065f621c";
-//        thea.sendMessage(message, signature);
-//    }
-//
-//    function testSendMessageWithVrfProof() public {
-//        thea.changeMode(Mode.Validators);
-//        bytes memory message = hex"0b000000000000000100000000000000020000000000000000020d010428b36010eb285c154a8cd60c0000000000000000000000000000000a000000000000000000000000000000504b257d164c8f94c042ac3a64855618c863b8dbee0000";
-//        bytes memory signature = hex"0ec8b09f096d1d7a5e9efc57cd1d6db15ddfbb0025e4c43cb83873c79fabf37f4f46db269760211b14bbb707a153806d7d57162f5aba28578de1f7b85a9032b201";
-//        bytes memory vrf_proof = hex"0208330248d8de6f1b48cc0d7fa907e7c6507d313754706646da1af62b52524e44253bdc2dd2f32ff3635b2aa989355d10ba74126ebbdae84ede03272543c8df26b479cc476565f56ff1095b34e613a93c";
-//        bytes[] memory signatures = new bytes[](133);
-//        for (uint i = 0; i < 133; i++) {
-//            signatures[i] = signature;
-//        }
-//        thea.validatorValidation(message, signatures, 0);
-//    }
-
-//    function testDecodePayload() public {
-//        bytes memory data = hex"bc01000000000000010000000000000002020d010428b36010eb285c154a8cd6af098e0cc9d1d058b55527316ba8788b00e1f505000000000000000000000000504b257d164c8f94c042ac3a64855618c863b8dbee0000";
-//        PolkadexTypes.decodePayload(data);
-//    }
-
-//    function testSendMessage() public {
-//        bytes memory message = hex"1d00000000000000010000000000000002020d010428b36010eb285c154a8cd6af098e0cc9d1d058b55527316ba8788b0010a5d4e80000000000000000000000504b257d164c8f94c042ac3a64855618c863b8dbee0000";
-//        bytes memory signature = hex"3af2bd40acec27bb32b2583c15dc3a969a256e64cc95f0c29da36820aeaf4ee7291fcde0c7b467e998c15d3017567b74938fd9be07f40e7f072a2d8f4890bc6b00";
-//        bytes[] memory signatures = new bytes[](1);
-//        signatures[0] = signature;
-//        bytes[] memory validators = new bytes[] (1);
-//        validators[0] = hex"02ef1e5505d809b1d3624c2fc8ab6346e370ab13e9b8675cbdd5481ed3be289abf";
-//        uint64[] memory validatorsIndexForVerification = new uint64[](1);
-//        validatorsIndexForVerification[0] = 0;
-//        thea.initialize(address(0), 1, validators, 1, validatorsIndexForVerification);
-//        thea.sendMessage(message, signatures);
-//    }
+    function testDecodeMessage() public {
+        bytes memory data = hex"44000000000000000100000000000000020000000000000000020d010428b36010eb285c154a8cd6af098e0cc9d1d058b55527316ba8788b0a000000000000000000000000000000504b257d164c8f94c042ac3a64855618c863b8dbee0000";
+        PolkadexTypes.decodePayload(data);
+    }
 
     function testSendMessage() public {
         bytes memory message = hex"5d7c5f00000000001f00000000000000ff020d010428d601c93fbebcfb8b57276f0000000000000000000000000000000000c16ff28623000000000000000000504b257d164c8f94c042ac3a64855618c863b8dbee0000";
@@ -307,12 +259,5 @@ contract TheaLatestTest is Test, Ds {
             validatorsIndexForVerificationNewDynamic[i] = validatorsIndexForVerificationNew[i];
         }
         thea.sendMessage(message, signatures, validatorsIndexForVerificationNewDynamic);
-    }
-
-    function testAbcValidatorValidation() public {
-        bytes memory message = hex"be975e00000000000b00000000000000ff020d010428d297a4221c3273a076266f0000000000000000000000000000000010a5d4e80000000000000000000000504b257d164c8f94c042ac3a64855618c863b8dbee0000";
-        bytes memory signature = hex"d54d91ec34970020d7b57158a6c191a9096ac446552c860659b5f49eee81f5426be17a1157c027124b21c460319ae301e464ebcd8be4d70adaa21943ac688fec01";
-        address validator = address(bytes20(hex"2a7cc7c16d761a7ec5a14a53343c0dcbbab0db"));
-        thea.abcValidatorValidation(message, signature, validator);
     }
 }

@@ -37,10 +37,10 @@ contract TheaLatest is Ds, Initializable, UUPSUpgradeable, ReentrancyGuard {
 
     event MessageProcessed(uint64 nonce);
     event WithdrawalClaimed(uint64 messageId, uint64 withdrawal_index);
-    event DepositEvent(bytes recipient, uint128 assetId, uint256 amount);
+    event DepositEvent(bytes recipient, uint128 assetId, uint256 amount, uint64 outgoingNonce);
     event TransactionBlocked(uint64 messageId, uint64 withdrawal_index);
     event DepositEventOb(bytes mainAccount, bytes tradingAccount, uint128 assetId, uint256 amount);
-    event debuggerBytes(bytes address1);
+    event debuggerNonce(uint64 nonce);
 
     /**
         @notice Initialize the contract with initial values.
@@ -127,10 +127,8 @@ contract TheaLatest is Ds, Initializable, UUPSUpgradeable, ReentrancyGuard {
         }
         uint128 assetId = addressToUint128(address(token));
         assetBook[assetId] = address(token);
-        //bytes memory data = abi.encode(token, amount, recipient);
-        //TODO: Who will send palletId and ExtId?
-        //TODO: Should have uniq id
-        emit DepositEvent(recipient, assetId, amount);
+        emit DepositEvent(recipient, assetId, amount, outgoingNonce);
+        outgoingNonce += 1;
     }
 
     /**
@@ -150,8 +148,6 @@ contract TheaLatest is Ds, Initializable, UUPSUpgradeable, ReentrancyGuard {
         // abi encode token, amount, mainAccount, tradingAccount
         uint128 assetId = addressToUint128(address(token));
         assetBook[assetId] = address(token);
-        bytes memory data = abi.encode(token, amount, mainAccount, tradingAccount);
-        //TODO: Who will send palletId and ExtId?
         emit DepositEventOb(mainAccount, tradingAccount, assetId, amount);
     }
 
@@ -186,21 +182,21 @@ contract TheaLatest is Ds, Initializable, UUPSUpgradeable, ReentrancyGuard {
     }
 
     //TODO: Optimize this function
-    function getValidatorIndex(bytes memory message, uint validatorSetId, uint64[] memory index) public returns (uint64[] memory) {
-           uint randNonce = uint(keccak256(abi.encodePacked(message))) % 100;
-            uint64[] memory validatorIndex = new uint64[](indexSize);
-            for (uint i = 0; i < indexSize;) {
-                randNonce++;
-                uint64 randNo = uint64(uint(keccak256(abi.encodePacked(message, randNonce))));
-                uint randomValidatorIndex = randNo % uint64(validators[validatorSetId].length);
-                for (uint j = 0; j < index.length; j++) {
-                    if (randomValidatorIndex == index[j]) {
-                        validatorIndex[i] = uint64(randomValidatorIndex);
-                        i++;
-                    }
+    function getValidatorIndex(bytes memory message, uint validatorSetId, uint64[] memory index) public view returns (uint64[] memory) {
+        uint randNonce = uint(keccak256(abi.encodePacked(message))) % 100;
+        uint64[] memory validatorIndex = new uint64[](indexSize);
+        for (uint i = 0; i < indexSize;) {
+            randNonce++;
+            uint64 randNo = uint64(uint(keccak256(abi.encodePacked(message, randNonce))));
+            uint randomValidatorIndex = randNo % uint64(validators[validatorSetId].length);
+            for (uint j = 0; j < index.length; j++) {
+                if (randomValidatorIndex == index[j]) {
+                    validatorIndex[i] = uint64(randomValidatorIndex);
+                    i++;
                 }
             }
-            return validatorIndex;
+        }
+        return validatorIndex;
     }
 
     /**
@@ -240,76 +236,10 @@ contract TheaLatest is Ds, Initializable, UUPSUpgradeable, ReentrancyGuard {
         }
     }
 
-    function abcValidatorValidation(bytes memory message, bytes memory signature, address validator) public {
-        bytes32 hash = sha256(message);
-        (uint8 v, bytes32 r, bytes32 s) = splitSignature(signature);
-        if (v == 0) {
-            v = 27;
-        } else if (v == 1) {
-            v = 28;
-        } else {
-            revert("Invalid signature version");
-        }
-        //(uint256 x, uint256 y) = SECP256K1.recover(uint256(hash), v - 27, uint256(r), uint256(s));
-        address a = ecrecover(hash, v, r, s);
-        //bytes memory signer =  abi.encodePacked(x, y);
-
-        bytes memory validator = hex"1234";
-        //emit debuggerBytes(bytes(a));
-        //require(false);
-        //require(signer == validator, "Invalid signature");
-    }
-
     function verifyAndUpdateNonce(uint64 actualNonce) internal {
+        emit debuggerNonce(actualNonce);
         require(actualNonce == incomingNonce, "Nonce is invalid");
         incomingNonce += 1;
-    }
-
-    function bytesToUint256(bytes calldata xCompressedKey) public returns (uint) {
-        uint x = PolkadexTypes.bytesToUintWithoutReverse(xCompressedKey[1:33]);
-        return x;
-    }
-
-    function decompressPublicKey(bytes memory compressedKey) public returns (bytes memory) {
-        require(compressedKey.length == 33, "Invalid compressed key length");
-
-        uint8 prefix = uint8(compressedKey[0]);
-        bool isEven = (prefix % 2 == 0);
-        uint8 yParity = isEven ? 0x02 : 0x03;
-        uint x = this.bytesToUint256(compressedKey);
-
-        //uint256 x = uint256(bytes32(compressedKeyE << 1));
-
-        uint256 p = 2**256 - 2**32 - 977;
-        uint256 a = 0;
-        uint256 b = 7;
-        uint256 ySquared = (x**3 + a*x + b) % p;
-        uint256 y = modExp(ySquared, (p+1)/4, p);
-
-        require(y**2 % p == ySquared, "Invalid y coordinate");
-
-        bytes memory uncompressedKey = new bytes(65);
-        uncompressedKey[0] = 0x04;
-        assembly {
-            mstore(add(uncompressedKey, 0x20), x)
-            mstore(add(uncompressedKey, 0x40), y)
-        }
-
-        return uncompressedKey;
-    }
-
-    function modExp(uint256 base, uint256 exponent, uint256 modulus) internal pure returns (uint256) {
-        if (modulus == 1) return 0;
-        uint256 result = 1;
-        base = base % modulus;
-        while (exponent > 0) {
-            if (exponent % 2 == 1) {
-                result = (result * base) % modulus;
-            }
-            exponent = exponent >> 1;
-            base = (base * base) % modulus;
-        }
-        return result;
     }
 
     /**
@@ -329,7 +259,7 @@ contract TheaLatest is Ds, Initializable, UUPSUpgradeable, ReentrancyGuard {
         @notice Convert address to uint128.
         @param b Address to convert.
     */
-    function addressToUint128(address b) public pure returns (uint128) {
+    function addressToUint128(address b) public view returns (uint128) {
         bytes32 assetId = sha256(abi.encode(networkId, b)); //FIXME: NetworkId is hard coded here. Make it constant
         return uint128(bytes16(assetId));
     }

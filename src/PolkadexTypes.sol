@@ -137,7 +137,7 @@ library PolkadexTypes {
         return withdrawals;
     }
 
-    function decodePayload(bytes calldata data) public returns (TheaMessage memory) {
+    function decodePayload(bytes calldata data) public pure returns (TheaMessage memory) {
         TheaMessage memory message;
         message.blockNumber = uint64(bytesToUint(data[0:8]));
         message.nonce = uint64(bytesToUint(data[8:16]));
